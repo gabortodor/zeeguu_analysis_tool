@@ -18,7 +18,7 @@ public class Processor implements Callable<List<Endpoint>> {
 
     private final File file;
     private final Pattern variablePattern = Pattern.compile("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*\"([^\"]*)\"\\s*$");
-    private final Pattern endpointPattern = Pattern.compile("@api\\.route\\((?:[frbu]*\")([^\"]+)\",?(?:\\s*methods=[\\(\\[]([^\\)\\]]+)[\\)\\]])?,?\\)");
+    private final Pattern endpointPattern = Pattern.compile("@api\\.route\\([frbu]*\"([^\"]+)\",?(?:\\s*methods=[(\\[]([^)\\]]+)[)\\]])?,?\\)");
 
 
     public Processor(final File file) {
