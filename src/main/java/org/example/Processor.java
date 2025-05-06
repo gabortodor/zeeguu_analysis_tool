@@ -14,7 +14,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Processor implements Callable<List<Endpoint>> {
+public class Processor implements Callable<FileAnalysis> {
 
     private final File file;
     private final Pattern variablePattern = Pattern.compile("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*\"([^\"]*)\"\\s*$");
@@ -26,18 +26,19 @@ public class Processor implements Callable<List<Endpoint>> {
     }
 
     @Override
-    public List<Endpoint> call() {
-        final List<Endpoint> result = new ArrayList<>();
+    public FileAnalysis call() {
+        FileAnalysis analysis;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            final List<Endpoint> endpointList = new ArrayList<>();
             final Map<String, String> context = new HashMap<>();
             String line;
             String apiBlock = "";
             boolean isAuthenticated = false;
             boolean inProgress = false;
-
+            int numberOfLines = 0;
             while ((line = br.readLine()) != null) {
 
-
+                numberOfLines++;
 
                 final Matcher variableMatcher = variablePattern.matcher(line);
                 if (variableMatcher.matches()) {
@@ -55,19 +56,20 @@ public class Processor implements Callable<List<Endpoint>> {
                     }
                 }
                 if (line.startsWith("def ") && !apiBlock.isEmpty()) {
-                    result.add(this.parse(file.getName(), apiBlock, context, isAuthenticated));
+                    endpointList.add(this.parse(apiBlock, context, isAuthenticated));
                     isAuthenticated = false;
                     inProgress = false;
                     apiBlock = "";
                 }
             }
+            analysis = new FileAnalysis(file.getName(), endpointList, numberOfLines);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return result;
+        return analysis;
     }
 
-    public Endpoint parse(final String fileName, final String line, final Map<String, String> context, final boolean isAuthenticated) {
+    public Endpoint parse(final String line, final Map<String, String> context, final boolean isAuthenticated) {
         final Matcher matcher = endpointPattern.matcher(line);
         if (matcher.find()) {
             String path = matcher.group(1);
@@ -89,9 +91,9 @@ public class Processor implements Callable<List<Endpoint>> {
             } else {
                 methods.add(Method.GET);
             }
-            return new Endpoint(fileName, path, methods, isAuthenticated);
+            return new Endpoint(path, methods, isAuthenticated);
         }
-        System.out.println("Invalid line: " + line +", file: " + fileName);
+        System.out.println("Invalid line: " + line);
         throw new IllegalArgumentException("Input string is not a valid route annotation");
     }
 }

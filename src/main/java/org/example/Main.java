@@ -11,16 +11,16 @@ import java.util.concurrent.Future;
 public class Main {
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(32);
-    private static final List<Future<List<Endpoint>>> futures = new ArrayList<>();
+    private static final List<Future<FileAnalysis>> futures = new ArrayList<>();
 
     public static void main(final String[] args) {
         crawlDirectoryAndProcessFiles(new File(args[0]));
 
-        final List<Endpoint> results = new ArrayList<>();
+        final List<FileAnalysis> results = new ArrayList<>();
 
-        for (final Future<List<Endpoint>> future : futures) {
+        for (final Future<FileAnalysis> future : futures) {
             try {
-                results.addAll(future.get());
+                results.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
@@ -28,8 +28,8 @@ public class Main {
 
         executor.shutdown();
 
-        for (Endpoint endpoint : results) {
-            System.out.println("File: " + endpoint.getFileName() +", path: " + endpoint.getPath() + ", methods: " + endpoint.getMethods() + ", session needed: " + endpoint.getAuthenticated());
+        for (FileAnalysis fileAnalysis : results) {
+            System.out.println("File: " + fileAnalysis.getFileName() +", number of endpoints: " + fileAnalysis.getEndpointList().size() + ", number of lines: " + fileAnalysis.getNumberOfLines());
         }
     }
 
